@@ -7,6 +7,19 @@ import joblib
 import numpy as np
 import streamlit.components.v1 as components
 
+# Google Analytics (GA4) snippet
+components.html("""
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1YTTPBS985');
+</script>
+""", height=0)
+
+
 # Load model and scaler
 model = joblib.load("burnout_xgb_model.pkl")
 scaler = joblib.load("burnout_scaler.pkl")
