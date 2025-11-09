@@ -5,6 +5,7 @@ import uuid, hashlib
 from pathlib import Path
 import joblib
 import numpy as np
+import streamlit.components.v1 as components
 
 # Load model and scaler
 model = joblib.load("burnout_xgb_model.pkl")
@@ -16,7 +17,14 @@ if "start_time" not in st.session_state:
 if "session_uuid" not in st.session_state:
     st.session_state.session_uuid = str(uuid.uuid4())
 
+# Streamlit page title
 st.title("Burnout Predictor (Demo)")
+
+# Optional: Embed Cookiebot / GA in HTML for consent
+components.html("""
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js"
+data-cbid="41265689-fd8b-4e8f-b01d-8a5923cfb3c7" type="text/javascript" async></script>
+""", height=0)
 
 # Consent checkbox
 st.markdown(
@@ -88,15 +96,6 @@ if st.button("Predict Burnout Score"):
     else:
         st.info("Analytics not recorded (consent not given).")
 
-# Optional: delete own session data
-if st.button("Delete my demo data"):
-    if Path("engagement_data.csv").exists():
-        sid_hash = hashlib.sha256(st.session_state.session_uuid.encode()).hexdigest()
-        df_all = pd.read_csv("engagement_data.csv")
-        df_all = df_all[df_all["session_hash"] != sid_hash]
-        df_all.to_csv("engagement_data.csv", index=False)
-        st.success("Your demo data has been deleted.")
-    else:
-        st.info("No data file found.")
+
 
 
