@@ -1,11 +1,11 @@
-# 🔥 Burnout Risk Predictor
+# Burnout Risk Predictor
 
 A simple, interactive Streamlit app that predicts the likelihood of **employee burnout** based on work-related factors such as workload, stress levels, work–life balance, and job satisfaction.  
 Built to help individuals and teams identify early warning signs and make better decisions about mental wellbeing.
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Burnout Risk Prediction** using a trained machine-learning model  
 - **Interactive sliders & inputs** for work habits, stress, sleep, and job satisfaction  
@@ -14,8 +14,7 @@ Built to help individuals and teams identify early warning signs and make better
 - **Fast, lightweight, and fully browser-based** — no data is stored
 
 ---
-
-## 🧠 How It Works
+## How It Works
 
 The app uses:
 - A trained classification model (e.g., Random Forest / Logistic Regression)  
@@ -33,7 +32,7 @@ All processing happens in real time directly in the app.
 
 ---
 
-## 🧪 How to Use
+## How to Use
 
 1. Open the app: **https://your-app-name.streamlit.app**  
 2. Adjust the sliders and input fields to match your current work habits  
@@ -42,9 +41,7 @@ All processing happens in real time directly in the app.
 
 That's it — no account, no signup, no data stored.
 
----
-
-## 📦 Tech Stack
+## Tech Stack
 
 - **Python 3.x**  
 - **Streamlit** (UI layer)  
@@ -54,7 +51,7 @@ That's it — no account, no signup, no data stored.
 
 ---
 
-## 💡 Why This App Is Useful
+## Why This App Is Useful
 
 Burnout affects productivity, health, and overall wellbeing.  
 This app helps users:
@@ -67,10 +64,10 @@ This app helps users:
 
 ---
 
-## 🔧 Run the App Locally
+#Run the App Locally
 
 ```bash
-git clone https://github.com/yourusername/your-repo.git
+git clone https://github.com/devi701/BurnoutAI.git
 cd your-repo
 pip install -r requirements.txt
 streamlit run app.py
