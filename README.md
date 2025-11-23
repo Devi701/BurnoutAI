@@ -1,3 +1,7 @@
+## ⚠️ Disclaimer
+
+This tool is for informational and educational purposes only.  
+It is **not** medical advice and should not be used to diagnose or treat any condition.
 # Burnout Risk Predictor
 
 A simple, interactive Streamlit app that predicts the likelihood of **employee burnout** based on work-related factors such as workload, stress levels, work–life balance, and job satisfaction.  
