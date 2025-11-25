@@ -1,5 +1,4 @@
-*.csv
-*.pkl
-.venv/
+scores.csv
+users.csv
 __pycache__/
-*.pyc
+.streamlit/secrets.toml
