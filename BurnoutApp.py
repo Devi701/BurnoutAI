@@ -9,12 +9,16 @@ import os
 import matplotlib.pyplot as plt
 from mixpanel import Mixpanel, Consumer
 
-# ========================
-# MIXPANEL SETUP
-# ========================
-MP_TOKEN = "2cc93e326a41d1b5791d57359f323114"
-# Using EU data residency
-mp = Mixpanel(MP_TOKEN, consumer=Consumer(api_host="https://api-eu.mixpanel.com"))
+try:
+    from mixpanel import Mixpanel
+    mp = Mixpanel(
+        token="2cc93e326a41d1b5791d57359f323114",
+        api_host="https://api-eu.mixpanel.com"
+    )
+    MIXPANEL_ENABLED = True
+except:
+    MIXPANEL_ENABLED = False
+    mp = None
 
 # ========================
 # PAGE CONFIG
