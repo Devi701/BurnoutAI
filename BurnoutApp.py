@@ -7,13 +7,14 @@ from datetime import datetime
 import hashlib
 import os
 import matplotlib.pyplot as plt
-from mixpanel import Mixpanel
+from mixpanel import Mixpanel, Consumer
 
-# Your Mixpanel project token
+# ========================
+# MIXPANEL SETUP
+# ========================
 MP_TOKEN = "2cc93e326a41d1b5791d57359f323114"
-mp = Mixpanel(MP_TOKEN)
-
-
+# Using EU data residency
+mp = Mixpanel(MP_TOKEN, consumer=Consumer(api_host="https://api-eu.mixpanel.com"))
 
 # ========================
 # PAGE CONFIG
@@ -178,6 +179,13 @@ if st.button("Show My Score", type="primary", use_container_width=True):
         "time_spent_minutes": elapsed_minutes,
         "timestamp": datetime.now().isoformat()
     })
+
+    # Update user profile in Mixpanel
+    mp.people_set(fp, {
+        "last_score": pred,
+        "job_title": job_title or "Anonymous",
+        "last_seen": datetime.now().isoformat()
+    }, meta={"$ignore_time": True, "$ip": 0})
 
     # Reactions
     with st.expander("Optional: How does seeing your score feel?"):
