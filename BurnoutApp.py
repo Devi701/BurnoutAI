@@ -10,15 +10,15 @@ import matplotlib.pyplot as plt
 from mixpanel import Mixpanel, Consumer
 
 try:
-    from mixpanel import Mixpanel
-    mp = Mixpanel(
-        token="2cc93e326a41d1b5791d57359f323114",
-        api_host="https://api-eu.mixpanel.com"
-    )
+    MP_TOKEN = "2cc93e326a41d1b5791d57359f323114"
+    mp = Mixpanel(MP_TOKEN, consumer=Consumer(api_host="https://api-eu.mixpanel.com"))
     MIXPANEL_ENABLED = True
-except:
-    MIXPANEL_ENABLED = False
+except Exception as e:
+    print("Mixpanel init failed:", e)
     mp = None
+    MIXPANEL_ENABLED = False
+
+
 
 # ========================
 # PAGE CONFIG
@@ -41,7 +41,7 @@ MODEL_PATH = "burnout_xgb_model.pkl"
 SCALER_PATH = "burnout_scaler.pkl"
 
 # ========================
-# 1. SEED 19 PEOPLE
+# SEED GLOBAL SCORES
 # ========================
 if not os.path.exists(ALL_SCORES):
     np.random.seed(42)
@@ -62,10 +62,9 @@ if not os.path.exists(ALL_SCORES):
 df_global = pd.read_csv(ALL_SCORES)
 
 # ========================
-# 2. FINGERPRINT
+# FINGERPRINT
 # ========================
 def get_fingerprint():
-    """Stable session-based fingerprint for tracking"""
     if "session_id" not in st.session_state:
         st.session_state.session_id = hashlib.sha256(os.urandom(32)).hexdigest()
     return hashlib.sha256(st.session_state.session_id.encode()).hexdigest()
@@ -75,7 +74,7 @@ OWNER_HASH = "639eaa54ed39a346f78ce4cd4de28f26ff8e7973ca084bba0893011860b66565"
 st.session_state.owner_mode = (fp == OWNER_HASH)
 
 # ========================
-# 3. LOAD MODEL
+# LOAD MODEL
 # ========================
 @st.cache_resource
 def load_model():
@@ -89,7 +88,7 @@ if model is None:
     st.stop()
 
 # ========================
-# 4. DUPLICATE PROTECTION
+# DUPLICATE PROTECTION
 # ========================
 if os.path.exists(USER_DATA):
     history = pd.read_csv(USER_DATA)
@@ -133,17 +132,17 @@ with col2:
 # SHOW RESULT
 # ========================
 if st.button("Show My Score", type="primary", use_container_width=True):
-    # Predict burnout score
+    # Plain list for prediction
     X = [[work_hours, sleep, stress, satisfaction, support,
           exercise_days, 30, remote_work, caffeine, screen]]
     pred = float(model.predict(scaler.transform(X))[0])
 
-    # Mark user seen
+    # Save fingerprint
     pd.DataFrame([{"fingerprint": fp}]).to_csv(
         USER_DATA, mode="a", header=not os.path.exists(USER_DATA), index=False
     )
 
-    # Save to global scores
+    # Save global score
     if is_first_time and not st.session_state.owner_mode:
         row = {
             "fingerprint": fp,
@@ -171,25 +170,12 @@ if st.button("Show My Score", type="primary", use_container_width=True):
     ax.set_title(f"You vs {len(df_global):,} people worldwide")
     st.pyplot(fig)
 
-    # Compute time spent
-    elapsed_seconds = (datetime.now() - st.session_state.session_start).total_seconds()
-    elapsed_minutes = round(elapsed_seconds / 60, 2)
-
-    # Track score & time in Mixpanel
-    mp.track(fp, "Burnout Score Viewed", {
-        "score": pred,
-        "job_title": job_title or "Anonymous",
-        "time_spent_seconds": elapsed_seconds,
-        "time_spent_minutes": elapsed_minutes,
-        "timestamp": datetime.now().isoformat()
-    })
-
-    # Update user profile in Mixpanel
-    mp.people_set(fp, {
-        "last_score": pred,
-        "job_title": job_title or "Anonymous",
-        "last_seen": datetime.now().isoformat()
-    }, meta={"$ignore_time": True, "$ip": 0})
+    # Track score in Mixpanel (optional)
+    if MIXPANEL_ENABLED:
+        try:
+            mp.track(fp, "Burnout Score Viewed")
+        except:
+            pass  # ignore errors
 
     # Reactions
     with st.expander("Optional: How does seeing your score feel?"):
@@ -203,16 +189,13 @@ if st.button("Show My Score", type="primary", use_container_width=True):
                 }]).to_csv(REACTIONS, mode="a", header=not os.path.exists(REACTIONS), index=False)
                 st.success("Thanks! Your reaction is live.")
 
-                # Track reaction & time in Mixpanel
-                mp.track(fp, "Reaction Shared", {
-                    "score": pred,
-                    "reaction": reaction.strip() or "—",
-                    "time_spent_seconds": elapsed_seconds,
-                    "time_spent_minutes": elapsed_minutes,
-                    "timestamp": datetime.now().isoformat()
-                })
+                if MIXPANEL_ENABLED:
+                    try:
+                        mp.track(fp, "Reaction Shared")
+                    except:
+                        pass
 
-    # Show last 10 reactions
+    # Last 10 reactions
     if os.path.exists(REACTIONS):
         st.markdown("#### What others are saying")
         df_r = pd.read_csv(REACTIONS).tail(10)
