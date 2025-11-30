@@ -27,11 +27,24 @@ st.markdown("""
   var k=e.createElement("script");k.type="text/javascript";k.async=!0;
   k.src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";
   e=e.getElementsByTagName("script")[0];e.parentNode.insertBefore(k,e)}})(document,window.mixpanel||[]);
+  
   mixpanel.init('2cc93e326a41d1b5791d57359f323114', {
     autocapture: true,
     record_sessions_percent: 100,
-    api_host: 'https://api-eu.mixpanel.com'
+    api_host: 'https://api-eu.mixpanel.com',
+    default_tracking: { sessions: true }
   });
+
+  // --- Create persistent anonymous ID ---
+  let anonId = localStorage.getItem('anon_id');
+  if (!anonId) {
+    anonId = crypto.randomUUID();
+    localStorage.setItem('anon_id', anonId);
+  }
+
+  // --- Identify anonymous user/device ---
+  mixpanel.identify(anonId);
+
 </script>
 """, unsafe_allow_html=True)
 
