@@ -1,6 +1,5 @@
-# app.py — Burnout Test + Mixpanel Analytics + Time Tracking (Investor Ready)
+# app.py — Burnout Test + PostHog Analytics + Time Tracking
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import joblib
@@ -8,38 +7,19 @@ from datetime import datetime
 import hashlib
 import os
 import matplotlib.pyplot as plt
+import uuid
+from posthog import Posthog
 
 # ========================
-# 0. MIXPANEL JS SDK (via components.html)
+# CONFIG POSTHOG
 # ========================
-components.html("""
-<script src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"></script>
-<script>
-(function() {
-    // Persistent anonymous user ID
-    let anonId = localStorage.getItem('mp_anon');
-    if (!anonId) {
-        anonId = crypto.randomUUID();
-        localStorage.setItem('mp_anon', anonId);
-    }
-
-    // Initialize Mixpanel
-    mixpanel.init('2cc93e326a41d1b5791d57359f323114', {
-        autocapture: true,
-        record_sessions_percent: 100,
-        api_host: 'https://api-eu.mixpanel.com',
-        debug: false,
-        default_tracking: { sessions: true }
-    });
-
-    // Identify anonymous user
-    mixpanel.identify(anonId);
-
-    // Track initial app open
-    mixpanel.track('App Loaded');
-})();
-</script>
-""", height=120)
+POSTHOG_API_KEY = "phc_8UA6aYI3EpYxYjkOIzHCOjQFl8dWEMi4HP5xuobpFvv"  # replace with your PostHog project key
+POSTHOG_HOST = "https://app.posthog.com"         # or your self-hosted URL
+ph = Posthog(
+    project_api_key=POSTHOG_API_KEY,
+    host=POSTHOG_HOST,
+    send=True  # optional: send events immediately
+)
 
 # ========================
 # PAGE CONFIG
@@ -47,10 +27,18 @@ components.html("""
 st.set_page_config(page_title="Burnout Test", page_icon="🔥", layout="centered")
 
 # ========================
-# SESSION START
+# SESSION / USER
 # ========================
+if "anon_id" not in st.session_state:
+    st.session_state.anon_id = str(uuid.uuid4())
+anon_id = st.session_state.anon_id
+
 if "session_start" not in st.session_state:
     st.session_state.session_start = datetime.now()
+session_start = st.session_state.session_start
+
+# Track app loaded
+ph.capture(distinct_id=anon_id, event="App Opened", properties={"timestamp": datetime.utcnow().isoformat()})
 
 # ========================
 # FILE PATHS
@@ -181,28 +169,35 @@ if st.button("Show My Score", type="primary", use_container_width=True):
     ax.set_title(f"You vs {len(df_global):,} people worldwide")
     st.pyplot(fig)
 
-    # Mixpanel tracking for investor metrics
-    components.html(f"""
-    <script>
-        const anonId = localStorage.getItem('mp_anon') || '';
-        mixpanel.track("Burnout Score Calculated", {{
-            score: {pred},
-            job_title: "{job_title}",
-            anon_id: anonId
-        }});
-    </script>
-    """, height=60)
+    # Track score calculated
+    ph.capture(distinct_id=anon_id, event="Burnout Score Calculated", properties={
+        "score": pred,
+        "job_title": job_title or "Anonymous",
+        "timestamp": datetime.utcnow().isoformat()
+    })
+
+    # Optional: reaction
+    with st.expander("Optional: How does seeing your score feel?"):
+        reaction = st.text_input("One line", key="reaction")
+        if st.button("Share Reaction", key="share"):
+            pd.DataFrame([{
+                "score": pred,
+                "reaction": reaction.strip() or "—",
+                "time": datetime.now().strftime("%b %d, %H:%M")
+            }]).to_csv(REACTIONS, mode="a", header=not os.path.exists(REACTIONS), index=False)
+
+            ph.capture(distinct_id=anon_id, event="Reaction Shared", properties={
+                "reaction": reaction.strip() or "—",
+                "score": pred,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+            st.success("Thanks! Your reaction is live.")
 
 # ========================
-# FOOTER — track duration
+# FOOTER — track session duration
 # ========================
-session_duration = (datetime.now() - st.session_state.session_start).seconds
-components.html(f"""
-<script>
-    const anonId = localStorage.getItem('mp_anon') || '';
-    mixpanel.track("Session Ended", {{duration_sec: {session_duration}, anon_id: anonId}});
-</script>
-""", height=60)
+session_duration = (datetime.now() - session_start).seconds
+ph.capture(distinct_id=anon_id, event="Session Ended", properties={"duration_sec": session_duration})
 
 st.markdown("---")
 st.caption("Watching the bars grow is addictive!")
