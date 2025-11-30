@@ -12,8 +12,9 @@ import matplotlib.pyplot as plt
 # 0. MIXPANEL JS SDK (TOP)
 # ========================
 st.markdown("""
-<!-- Mixpanel JS SDK -->
+<!-- Mixpanel Full Setup (Anon Profiles + Sessions + Replays) -->
 <script type="text/javascript">
+  // Load Mixpanel
   (function(e,c){if(!c.__SV){var l,h;window.mixpanel=c;c._i=[];c.init=function(q,r,f){
   function t(d,a){var g=a.split(".");2==g.length&&(d=d[g[0]],a=g[1]);d[a]=function(){
   d.push([a].concat(Array.prototype.slice.call(arguments,0)))}}var b=c;
@@ -27,24 +28,36 @@ st.markdown("""
   var k=e.createElement("script");k.type="text/javascript";k.async=!0;
   k.src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";
   e=e.getElementsByTagName("script")[0];e.parentNode.insertBefore(k,e)}})(document,window.mixpanel||[]);
-  
+
+  // ---------------------------------------------
+  // 1. Create a persistent anonymous user ID
+  // ---------------------------------------------
+  let anonId = localStorage.getItem('anon_id');
+  if (!anonId) {
+      anonId = crypto.randomUUID();
+      localStorage.setItem('anon_id', anonId);
+  }
+
+  // ---------------------------------------------
+  // 2. Initialize Mixpanel
+  // ---------------------------------------------
   mixpanel.init('2cc93e326a41d1b5791d57359f323114', {
     autocapture: true,
     record_sessions_percent: 100,
     api_host: 'https://api-eu.mixpanel.com',
-    default_tracking: { sessions: true }
+    debug: false,
+    default_tracking: {
+      sessions: true  // enables Session Start / Session End
+    }
   });
 
-  // --- Create persistent anonymous ID ---
-  let anonId = localStorage.getItem('anon_id');
-  if (!anonId) {
-    anonId = crypto.randomUUID();
-    localStorage.setItem('anon_id', anonId);
-  }
-
-  // --- Identify anonymous user/device ---
+  // ---------------------------------------------
+  // 3. Identify anonymous visitors
+  // ---------------------------------------------
   mixpanel.identify(anonId);
 
+  // Optional: track page load
+  mixpanel.track("App Loaded");
 </script>
 """, unsafe_allow_html=True)
 
